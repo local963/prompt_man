@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Builder — Madhavan</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #7c6dfa;
+    --accent2: #4fffc8;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --success: #4fffc8;
+    --warning: #ffb347;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 600px 400px at 20% 20%, rgba(124,109,250,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 400px 300px at 80% 80%, rgba(79,255,200,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .grid-overlay {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,109,250,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,109,250,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent2);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  header h1 span { color: var(--accent); }
+
+  header p {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 0.4rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .steps-nav {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .step-tab {
+    flex: 1;
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    border-right: 1px solid var(--border);
+    cursor: default;
+    transition: all 0.2s;
+    line-height: 1.3;
+  }
+
+  .step-tab:last-child { border-right: none; }
+
+  .step-tab.active {
+    background: var(--surface2);
+    color: var(--accent);
+  }
+
+  .step-tab.done {
+    color: var(--accent2);
+  }
+
+  .step-tab .num {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .field {
+    margin-bottom: 1.1rem;
+  }
+
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  input[type="text"], select, textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'Syne', sans-serif;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  input[type="text"]:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--accent);
+  }
+
+  input::placeholder { color: var(--muted); }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6b80' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  select option {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  textarea {
+    min-height: 260px;
+    resize: vertical;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    margin-left: auto;
+  }
+
+  .btn-primary:hover { opacity: 0.85; }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--muted);
+  }
+
+  .btn-secondary:hover {
+    color: var(--text);
+    border-color: var(--text);
+  }
+
+  .btn-copy {
+    background: transparent;
+    color: var(--accent2);
+    border-color: var(--accent2);
+  }
+
+  .btn-copy:hover { background: rgba(79,255,200,0.08); }
+
+  .btn-reset {
+    background: transparent;
+    color: var(--muted);
+  }
+
+  .btn-reset:hover { color: var(--warning); border-color: var(--warning); }
+
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--surface2);
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .layer-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 0.75rem;
+  }
+
+  .tag {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .tag.fe { border-color: rgba(124,109,250,0.4); color: #9b8fff; }
+  .tag.api { border-color: rgba(79,255,200,0.3); color: #4fffc8; }
+  .tag.be { border-color: rgba(255,179,71,0.3); color: #ffb347; }
+  .tag.db { border-color: rgba(255,100,100,0.3); color: #ff7070; }
+
+  #output-section { display: none; }
+
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .section-hidden { display: none; }
+
+  @media (max-width: 600px) {
+    .step-tab { font-size: 10px; padding: 8px 4px; }
+    .step-tab .num { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-overlay"></div>
+
+<div class="container">
+
+  <header>
+    <div class="logo">// prompt-builder v1.0</div>
+    <h1>App <span>Prompt</span> Builder</h1>
+    <p>→ fill in details → generate full-stack AI prompt</p>
+  </header>
+
+  <div class="steps-nav" id="stepsNav"></div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+  </div>
+
+  <!-- Steps -->
+  <div id="steps-container"></div>
+
+  <!-- Output -->
+  <div id="output-section">
+    <div class="card">
+      <div class="card-title">generated prompt — copy & use in any AI</div>
+      <textarea id="promptOutput" readonly></textarea>
+      <div class="btn-row">
+        <button class="btn-reset" onclick="resetAll()">↺ start over</button>
+        <button class="btn-copy" onclick="copyPrompt()">⎘ copy prompt</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 1rem;">
+      <div class="card-title">layers covered in this prompt</div>
+      <div class="layer-tags">
+        <span class="tag fe">#1 HTML</span>
+        <span class="tag fe">#2 CSS</span>
+        <span class="tag fe">#3 JavaScript</span>
+        <span class="tag fe">#4 Framework</span>
+        <span class="tag fe">#5 State</span>
+        <span class="tag fe">#6 Routing</span>
+        <span class="tag fe">#7 API Comm</span>
+        <span class="tag fe">#8 UI Components</span>
+        <span class="tag fe">#9 Testing</span>
+        <span class="tag fe">#10 Build & Deploy</span>
+        <span class="tag api">#11 API Gateway</span>
+        <span class="tag api">#12 Auth</span>
+        <span class="tag api">#13 Rate Limiting</span>
+        <span class="tag api">#14 Routing</span>
+        <span class="tag api">#15 Response</span>
+        <span class="tag api">#16 Docs</span>
+        <span class="tag be">#17 Server</span>
+        <span class="tag be">#18 Framework</span>
+        <span class="tag be">#19 Logic</span>
+        <span class="tag be">#20 Auth</span>
+        <span class="tag be">#21 File Storage</span>
+        <span class="tag be">#22 Email/SMS</span>
+        <span class="tag be">#23 Jobs</span>
+        <span class="tag be">#24 Testing</span>
+        <span class="tag db">#25 DB Type</span>
+        <span class="tag db">#26 DB Engine</span>
+        <span class="tag db">#27 ORM</span>
+        <span class="tag db">#28 Cache</span>
+        <span class="tag db">#29 Search</span>
+        <span class="tag db">#30 Backup</span>
+        <span class="tag db">#31 Encrypt</span>
+        <span class="tag">#32 Firewall</span>
+        <span class="tag">#33 SSL/TLS</span>
+        <span class="tag">#34 DDoS</span>
+        <span class="tag">#35 Vuln Scan</span>
+        <span class="tag">#36 Access Control</span>
+        <span class="tag">#37 CDN</span>
+        <span class="tag">#38 Load Balancer</span>
+        <span class="tag">#39 Auto Scale</span>
+        <span class="tag">#40 Monitoring</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">✓ copied to clipboard</div>
+
+<script>
+const steps = [
+  {
+    id: 'basics',
+    label: 'Basics',
+    emoji: '01',
+    fields: [
+      { id: 'appName', label: 'app name', type: 'text', placeholder: 'e.g. TaskMate, DroneTracker' },
+      { id: 'appDesc', label: 'what does it do? (one sentence)', type: 'text', placeholder: 'e.g. A task manager for remote teams' },
+      { id: 'appType', label: 'app type', type: 'select', options: ['Web app', 'Dashboard', 'E-commerce', 'SaaS tool', 'Portfolio', 'Mobile app', 'Other'] },
+    ]
+  },
+  {
+    id: 'frontend',
+    label: 'Frontend',
+    emoji: '02',
+    fields: [
+      { id: 'uiDesc', label: 'UI look & feel', type: 'text', placeholder: 'e.g. Dark theme, modern cards, clean layout' },
+      { id: 'framework', label: 'framework', type: 'select', options: ['React', 'Vue', 'Plain HTML/CSS/JS', 'AI decides'] },
+      { id: 'uiLib', label: 'UI library', type: 'select', options: ['Tailwind CSS', 'Material UI', 'ShadCN', 'Bootstrap', 'Custom CSS', 'AI decides'] },
+      { id: 'pages', label: 'pages / screens (comma separated)', type: 'text', placeholder: 'e.g. Home, Dashboard, Login, Profile' },
+    ]
+  },
+  {
+    id: 'api',
+    label: 'API',
+    emoji: '03',
+    fields: [
+      { id: 'apiType', label: 'API type', type: 'select', options: ['REST API', 'GraphQL', 'AI decides'] },
+      { id: 'authType', label: 'authentication', type: 'select', options: ['Email & Password (JWT)', 'Google OAuth', 'Firebase Auth', 'No auth needed', 'AI decides'] },
+      { id: 'apiFeatures', label: 'extra API features (optional)', type: 'text', placeholder: 'e.g. File upload, webhooks, rate limiting' },
+    ]
+  },
+  {
+    id: 'backend',
+    label: 'Backend',
+    emoji: '04',
+    fields: [
+      { id: 'backendLang', label: 'backend language & framework', type: 'select', options: ['Python (FastAPI)', 'Python (Django)', 'Node.js (Express)', 'AI decides'] },
+      { id: 'features', label: 'key backend features (optional)', type: 'text', placeholder: 'e.g. Email notifications, file storage, cron jobs' },
+      { id: 'thirdParty', label: 'third party services (optional)', type: 'text', placeholder: 'e.g. Stripe payments, Twilio SMS, SendGrid email' },
+    ]
+  },
+  {
+    id: 'database',
+    label: 'Database',
+    emoji: '05',
+    fields: [
+      { id: 'dbType', label: 'database', type: 'select', options: ['PostgreSQL (SQL)', 'MySQL (SQL)', 'MongoDB (NoSQL)', 'SQLite (lightweight)', 'AI decides'] },
+      { id: 'caching', label: 'caching', type: 'select', options: ['Yes — Redis', 'No caching needed', 'AI decides'] },
+      { id: 'mainData', label: 'main data to store', type: 'text', placeholder: 'e.g. Users, tasks, orders, drone flights, reports' },
+    ]
+  },
+  {
+    id: 'deploy',
+    label: 'Deploy',
+    emoji: '06',
+    fields: [
+      { id: 'hosting', label: 'hosting / deployment', type: 'select', options: ['Vercel + Railway', 'Netlify + Supabase', 'AWS', 'Google Cloud', 'AI decides'] },
+      { id: 'scale', label: 'expected scale', type: 'select', options: ['Personal / small (< 100 users)', 'Medium (100 – 10k users)', 'Large (10k+ users)'] },
+      { id: 'extraNotes', label: 'extra requirements (optional)', type: 'text', placeholder: 'e.g. Mobile responsive, dark mode, multilingual support' },
+    ]
+  }
+];
+
+let current = 0;
+const answers = {};
+
+function buildNav() {
+  const nav = document.getElementById('stepsNav');
+  nav.innerHTML = steps.map((s, i) => `
+    <div class="step-tab ${i === current ? 'active' : i < current ? 'done' : ''}" id="tab-${i}">
+      <span class="num">${i < current ? '✓' : s.emoji}</span>
+      ${s.label}
+    </div>
+  `).join('');
+}
+
+function buildStep() {
+  const container = document.getElementById('steps-container');
+  const s = steps[current];
+  container.innerHTML = `
+    <div class="card">
+      <div class="card-title">${s.label} — step ${current + 1} of ${steps.length}</div>
+      ${s.fields.map(f => `
+        <div class="field">
+          <label>${f.label}</label>
+          ${f.type === 'select'
+            ? `<select id="f-${f.id}">${f.options.map(o => `<option value="${o}" ${answers[f.id] === o ? 'selected' : ''}>${o}</option>`).join('')}</select>`
+            : `<input type="text" id="f-${f.id}" placeholder="${f.placeholder}" value="${answers[f.id] || ''}" />`
+          }
+        </div>
+      `).join('')}
+      <div class="btn-row">
+        ${current > 0 ? `<button class="btn-secondary" onclick="prevStep()">← back</button>` : ''}
+        <button class="btn-primary" onclick="nextStep()">${current === steps.length - 1 ? 'generate prompt →' : 'next →'}</button>
+      </div>
+    </div>
+  `;
+  updateProgress();
+}
+
+function updateProgress() {
+  const pct = (current / steps.length) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function saveStep() {
+  steps[current].fields.forEach(f => {
+    const el = document.getElementById('f-' + f.id);
+    if (el) answers[f.id] = el.value.trim();
+  });
+}
+
+function nextStep() {
+  saveStep();
+  if (current < steps.length - 1) {
+    current++;
+    buildNav();
+    buildStep();
+  } else {
+    generate();
+  }
+}
+
+function prevStep() {
+  saveStep();
+  current--;
+  buildNav();
+  buildStep();
+}
+
+function generate() {
+  document.getElementById('steps-container').style.display = 'none';
+  document.getElementById('output-section').style.display = 'block';
+  document.getElementById('stepsNav').style.display = 'none';
+  document.getElementById('progressFill').style.width = '100%';
+
+  const a = answers;
+
+  const prompt = `Build me a complete full-stack web application with the following specifications:
+
+╔══════════════════════════════════════╗
+  APP OVERVIEW
+╚══════════════════════════════════════╝
+Name        : ${a.appName || 'My App'}
+Description : ${a.appDesc || 'A web application'}
+Type        : ${a.appType || 'Web app'}
+
+╔══════════════════════════════════════╗
+  FRONTEND — Layers 1 to 10
+╚══════════════════════════════════════╝
+UI Look & Feel   : ${a.uiDesc || 'Clean and modern'}
+Framework        : ${a.framework || 'React'}
+UI Library       : ${a.uiLib || 'Tailwind CSS'}
+Pages / Screens  : ${a.pages || 'Home, Dashboard, Login'}
+
+Frontend requirements:
+- Fully responsive design (mobile + desktop)
+- Component-based architecture
+- Client-side routing between all pages
+- State management where needed
+- API communication via Axios or Fetch
+- Clean, maintainable folder structure
+
+╔══════════════════════════════════════╗
+  API LAYER — Layers 11 to 16
+╚══════════════════════════════════════╝
+API Type       : ${a.apiType || 'REST API'}
+Auth Method    : ${a.authType || 'Email & Password (JWT)'}
+Extra Features : ${a.apiFeatures || 'Standard CRUD endpoints'}
+
+API requirements:
+- Structured JSON responses with status codes
+- Proper error handling for all endpoints
+- Authentication middleware on protected routes
+- Rate limiting on public endpoints
+- API documentation (Swagger or README)
+
+╔══════════════════════════════════════╗
+  BACKEND — Layers 17 to 24
+╚══════════════════════════════════════╝
+Language & Framework : ${a.backendLang || 'Python (FastAPI)'}
+Key Features         : ${a.features || 'Standard CRUD operations'}
+Third Party Services : ${a.thirdParty || 'None'}
+
+Backend requirements:
+- Clean separation of routes, controllers, services
+- Input validation and sanitization
+- Secure authentication and authorization
+- Modular folder structure
+- Environment-based configuration
+
+╔══════════════════════════════════════╗
+  DATABASE — Layers 25 to 31
+╚══════════════════════════════════════╝
+Database Engine : ${a.dbType || 'PostgreSQL'}
+Caching         : ${a.caching || 'No caching needed'}
+Main Data       : ${a.mainData || 'Users and app data'}
+
+Database requirements:
+- Proper schema design with relationships
+- ORM for all database interactions
+- Indexes on frequently queried fields
+- Sensitive fields encrypted at rest
+- Automated backup strategy
+
+╔══════════════════════════════════════╗
+  SECURITY — Layers 32 to 36
+╚══════════════════════════════════════╝
+- HTTPS only (SSL/TLS enforced)
+- SQL injection and XSS prevention
+- Secure password hashing (bcrypt)
+- CORS configured correctly
+- All secrets in environment variables
+- Access control based on user roles
+
+╔══════════════════════════════════════╗
+  TRAFFIC & DEPLOYMENT — Layers 37 to 40
+╚══════════════════════════════════════╝
+Hosting        : ${a.hosting || 'Vercel + Railway'}
+Expected Scale : ${a.scale || 'Personal / small'}
+
+Deployment requirements:
+- CDN for all static assets
+- Health check endpoint
+- Environment configs for dev and prod
+- Basic error logging and monitoring
+- CI/CD ready folder structure
+
+╔══════════════════════════════════════╗
+  EXTRA REQUIREMENTS
+╚══════════════════════════════════════╝
+${a.extraNotes || 'None'}
+
+╔══════════════════════════════════════╗
+  DELIVERABLES — build in this order
+╚══════════════════════════════════════╝
+1. Complete folder & file structure
+2. Database schema and migrations
+3. Backend — server, routes, models, services
+4. API documentation or README
+5. Frontend — components, pages, routing
+6. Environment variables list (.env.example)
+7. Setup and run instructions (README.md)
+
+Build step by step. Start with folder structure, then database schema, then backend, then frontend. Ask me before making any assumptions.`;
+
+  document.getElementById('promptOutput').value = prompt;
+}
+
+function copyPrompt() {
+  const ta = document.getElementById('promptOutput');
+  ta.select();
+  document.execCommand('copy');
+  showToast();
+}
+
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function resetAll() {
+  Object.keys(answers).forEach(k => delete answers[k]);
+  current = 0;
+  document.getElementById('steps-container').style.display = 'block';
+  document.getElementById('output-section').style.display = 'none';
+  document.getElementById('stepsNav').style.display = 'flex';
+  buildNav();
+  buildStep();
+}
+
+buildNav();
+buildStep();
+</script>
+
+</body>
+</html>
